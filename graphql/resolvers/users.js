@@ -2,9 +2,10 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { UserInputError } = require('apollo-server');
 
-const { validateRegisterInput, validateLoginInput } = require('../../util/validators'); 
+const { validateRegisterInput, validateLoginInput, validateEditUsernameInput } = require('../../util/validators'); 
 const { SECRET_KEY } = require('../../config');
 const User = require('../../models/User');
+const checkAuth = require('../../util/check-auth');
 
 function generateToken(user){
     return jwt.sign({
@@ -24,7 +25,6 @@ module.exports = {
             if(!user){
                 errors.general = 'User not found';
                 throw new UserInputError('User not found', { errors });
-
             }
             const match = await bcrypt.compare(password,user.password);
             if(!match){
@@ -72,6 +72,13 @@ module.exports = {
                 id: res._id,
                 token
             };
+        },
+        async editUsername(_, { username }, context){
+            const user = checkAuth(context);
+            const { valid, errors } = validateEditUsernameInput(username);
+            if(!valid) {
+                throw new UserInputError('Errors', { errors });
+            }
         }
     }
 }
